@@ -152,7 +152,7 @@ document.querySelectorAll('form[data-ck]').forEach(f=>{
     btn.disabled=true;const t=btn.textContent;btn.textContent='Joining\u2026';
     try{const r=await fetch(KIT_ENDPOINT,
       {method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify({email_address:v})});
-      if(r.ok){msg.className='emsg ok';msg.textContent="Almost there \u2014 check your email to confirm your spot on the list.";input.value='';}else throw 0;
+      if(r.ok){msg.className='emsg ok';msg.textContent="You're on the list \u2014 welcome to NOVR.";input.value='';}else throw 0;
     }catch(_){msg.className='emsg err';msg.textContent='Something went wrong \u2014 please try again.';}
     btn.disabled=false;btn.textContent=t;
   });
