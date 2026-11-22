@@ -129,7 +129,7 @@ p.date a:hover{color:var(--g1)}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.reveal{opacity:1;transform:none}html{scroll-behavior:auto}}
 
 .eg{margin-top:.6rem;font-style:italic;color:var(--g2);font-size:.9rem;opacity:.92;letter-spacing:.01em}
-.sticky-cta{display:none}
+.sticky-cta{display:none}.sticky-cta.hide{opacity:0;pointer-events:none;transform:translateY(20px)}
 @media(max-width:640px){.sticky-cta{display:block;position:fixed;left:16px;right:16px;bottom:16px;z-index:60;text-align:center;padding:14px 20px;border-radius:999px;background:linear-gradient(135deg,var(--g1),var(--g2));color:#0A0A0B;font-weight:700;text-decoration:none;letter-spacing:.02em;box-shadow:0 10px 30px rgba(0,0,0,.55)}}
 
 .lgl{position:fixed;inset:0;z-index:200;display:none;align-items:center;justify-content:center;padding:20px;background:rgba(5,5,6,.82);backdrop-filter:blur(6px)}
@@ -517,12 +517,22 @@ document.querySelectorAll('form[data-ck]').forEach(f=>{
     const v=(input.value||'').trim();
     if(!re.test(v)){msg.className='emsg err';msg.textContent='Please enter a valid email address.';return;}
     btn.disabled=true;const t=btn.textContent;btn.textContent='Joining\u2026';
-    try{const r=await fetch(KIT_ENDPOINT,
-      {method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify(kitPayload(v))});
-      if(r.ok){msg.className='emsg ok';msg.textContent="You're on the list. Welcome to NOVR.";input.value='';
-        try{if(window.fbq){fbq('track','Lead',{content_name:'Waitlist'});}}catch(e){}
-      }else throw 0;
-    }catch(_){msg.className='emsg err';msg.textContent='Something went wrong. Please try again.';}
+    let r=null;
+    try{const p=kitPayload(v),fd=new URLSearchParams();fd.append('email_address',p.email_address);
+      if(p.fields){for(const k in p.fields)fd.append('fields['+k+']',p.fields[k]);}
+      r=await fetch(KIT_ENDPOINT,{method:'POST',headers:{'Accept':'application/json'},body:fd});
+    }catch(_){r=null;}
+    if(r&&r.ok){msg.className='emsg ok';msg.textContent="You're on the list. Welcome to NOVR.";input.value='';
+      try{if(window.fbq){fbq('track','Lead',{content_name:'Waitlist'});}}catch(e){}
+    }else if(r){msg.className='emsg err';msg.textContent='Something went wrong ('+r.status+'). Please check your email and try again.';
+    }else{
+      // The browser blocked the background request (privacy setting, in-app browser or network).
+      // Fall back to a normal form post straight to Kit, which records the signup on Kit's own page.
+      try{if(window.fbq){fbq('track','Lead',{content_name:'Waitlist fallback'});}}catch(e){}
+      const nf=document.createElement('form');nf.method='POST';nf.action=KIT_ENDPOINT;
+      const i=document.createElement('input');i.type='hidden';i.name='email_address';i.value=v;nf.appendChild(i);
+      document.body.appendChild(nf);nf.submit();return;
+    }
     btn.disabled=false;btn.textContent=t;
   });
 });
@@ -588,4 +598,7 @@ const CONTACT_ACCESS_KEY="e7621033-8135-4cd2-9973-5e46b31cc13e"; // Web3Forms - 
   });
 })();
 </script>
-<a href="#early" class="sticky-cta">Join the list</a></body></html>
+<a href="#early" class="sticky-cta">Join the list</a>
+<script>(function(){var s=document.querySelector('.sticky-cta'),e=document.getElementById('early');if(!s||!e||!('IntersectionObserver' in window))return;
+new IntersectionObserver(function(x){s.classList.toggle('hide',x[0].isIntersecting);},{threshold:0}).observe(e);})();</script>
+</body></html>
