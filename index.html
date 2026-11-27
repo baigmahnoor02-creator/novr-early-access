@@ -509,12 +509,14 @@ const KIT_ENDPOINT="https://app.kit.com/forms/9835588/subscriptions"; // Bionovr
 // is lost. Once the field is created, set KIT_TRACK_SOURCE to true: the utm_source
 // from the ad link is then stored against each subscriber, so we can tell which
 // ad produced which lead.
-const KIT_TRACK_SOURCE = false;
+const KIT_TRACK_SOURCE = true;
 function kitPayload(email){
   const body = {email_address: email};
   if (KIT_TRACK_SOURCE) {
     const p = new URLSearchParams(location.search);
-    body.fields = {source: p.get('utm_source') || p.get('ref') || 'direct'};
+    let ref='';try{ref=document.referrer?new URL(document.referrer).hostname.replace(/^www\./,''):'';}catch(_){}
+    if(ref===location.hostname)ref='';
+    body.fields = {source: p.get('utm_source') || p.get('ref') || ref || 'direct'};
   }
   return body;
 }
